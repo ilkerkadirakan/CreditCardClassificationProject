@@ -79,8 +79,3 @@ Uygulama, kredi skorunu tahmin eden modellerin görselleştirilmiş çıktılar�
 
 Görüş, öneri ve katkılarınız için:
 github.com/ilkerkadirakan
-
----
-
-Bu metni kopyal → GitHub `README.md` kutusuna yapıştır → direkt markdown olarak görünür.
-İstersen üstüne görsel, grafik, ekran görüntüsü de ekleyebiliriz. Hazırsan 🔥
