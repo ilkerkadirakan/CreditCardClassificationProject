@@ -5,5 +5,5 @@ seaborn
 matplotlib
 joblib
 plotly
-
-
+xgboost
+lightgbm
