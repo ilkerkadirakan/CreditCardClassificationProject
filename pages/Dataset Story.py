@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import plotly.express as px  # type: ignore
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,12 +9,11 @@ import streamlit.components.v1 as components
 st.set_page_config(page_title="Kredi Skoru Analizi", layout="wide")
 
 # Renk paleti tanımlamaları
-color_palette = px.colors.qualitative.Bold
-color_continuous_scale = px.colors.qualitative.D3
+color_palette = px.colors.sequential.PuBu_r  ## kategorik veriler için renk paleti
+color_continuous_scale = px.colors.cyclical.Twilight  ## sayısal veriler için renk paleti
 
-# Hikaye başlığı ve giriş
-st.title("📊 Kredi Skorunuzun Hikayesi")
-
+# # Hikaye başlığı ve giriş
+st.title("📊 Kredi Skorumuz Hikayesi")
 st.markdown("""
 Bu proje kapsamında kullanılan veri seti, bireylerin kredi skorunu etkileyen finansal, 
 demografik ve davranışsal değişkenleri içermektedir. Veri seti, farklı meslek gruplarına
@@ -55,7 +54,7 @@ st.subheader("💳 Kredi Türleri Değişkenleri Açıklaması")
 st.markdown("""
 - Auto Loan: Bireyin taşıt kredisi kullanıp kullanmadığı
 - Student Loan: Öğrenci kredisi alıp almadığı.
-- Mortgage Loan: Konut kredisi (ev alımı veya ipotekli kredi) kullanıp kullanmadığı.
+- Mortgage Loan: Konut kredisi (ev alımı veya ipotekli kredi) kullanıp kullanmadığı
 - Credit-Builder Loan: Kredi skoru geliştirme kredisi kullanımı
 - Debt Consolidation Loan: Borç birleştirme kredisi kullanımı.
 - Home Equity Loan: Ev teminatlı kredi alıp almadığı.
@@ -70,7 +69,7 @@ css = """
     /* Bölüm başlıkları için stil */
     .section-header {
         background-color: rgba(28, 131, 225, 0.1);
-        border-left: 4px solid #4da6ff;
+        border-left: 4px solid #00d1d8;
         padding: 10px 15px;
         border-radius: 0 8px 8px 0;
         margin: 30px 0 20px 0;
@@ -88,12 +87,12 @@ css = """
     /* Metrik başlığı */
     div[data-testid="metric-container"] label {
         font-weight: bold;
-        color: #1c83e1;
+        color: #b900f7;
     }
 
     /* Metrik değeri */
     div[data-testid="metric-container"] div {
-        color: #0d6efd;
+        color: #4100b2;
     }
 
     /* Hikaye bölümleri */
@@ -109,7 +108,7 @@ st.markdown(css, unsafe_allow_html=True)
 
 # Veri dosyasını yükle
 try:
-    preprocessed_data = pd.read_csv("data/not_scaled_processed_data.csv")
+    preprocessed_data = pd.read_csv("CreditScore.csv")
 except Exception as e:
     st.error(f"Veri yüklenirken hata oluştu: {e}")
     preprocessed_data = None
@@ -118,7 +117,7 @@ if preprocessed_data is not None:
     # Sidebar filtreleri
     with st.sidebar:
         st.image("logo.png")
-        st.subheader("Hikayenizi Özelleştirin")
+        st.subheader("Filtreleme")
 
         # Kredi skoru filtreleme
         credit_options = preprocessed_data['Credit_Score'].unique().tolist()
@@ -158,14 +157,10 @@ if preprocessed_data is not None:
     if selected_month:
         filtered_data = filtered_data[filtered_data["Month"].isin(selected_month)]
 
-
+    st.info(f"📊 Gösterilen kayıt sayısı: {len(filtered_data)}")
 
     # İLK BÖLÜM: Müşteri Profili
     st.markdown('<div class="section-header"><h2>📱 Bölüm 1: Müşteri Profili</h2></div>', unsafe_allow_html=True)
-    st.markdown("""
-    *Kredi skoru hikayenizin baş karakteri olan müşterilerinizi tanıyalım. Bu bölümde, müşterilerinizin genel
-    demografik bilgileri ve temel finansal göstergeleri sunulmaktadır.*
-    """)
 
     # Genel Metrikleri Göster
     st.subheader("Temel Finansal Göstergeler")
@@ -214,19 +209,23 @@ if preprocessed_data is not None:
         st.plotly_chart(fig, use_container_width=True)
 
     with col2:
-        # Yaş ve kredi skoru ilişkisi
-        age_score_counts = filtered_data.groupby(['Yaş Grubu', 'Credit_Score']).size().reset_index(name='Count')
+        # Credit Mix ve Kredi Skoru İlişkisi
+        credit_mix_score = filtered_data.groupby(['Credit_Mix', 'Credit_Score']).size().reset_index(name='Count')
 
         fig = px.bar(
-            age_score_counts,
-            x='Yaş Grubu',
+            credit_mix_score,
+            x='Credit_Mix',
             y='Count',
             color='Credit_Score',
-            title='Yaş Grubuna Göre Kredi Skoru Dağılımı',
+            title='Kredi Türü Çeşitliliği ve Kredi Skoru',
             color_discrete_sequence=color_palette,
             barmode='group'
         )
-        fig.update_layout(template="plotly_dark", yaxis_title="Müşteri Sayısı")
+        fig.update_layout(
+            template="plotly_dark",
+            xaxis_title="Kredi Türü Çeşitliliği",
+            yaxis_title="Müşteri Sayısı"
+        )
         st.plotly_chart(fig, use_container_width=True)
 
     # Meslek dağılımı
@@ -517,9 +516,6 @@ if preprocessed_data is not None:
         })
 
     loan_df = pd.DataFrame(loan_counts)
-    # Renk paleti tanımlamaları
-    color_palette = px.colors.sequential.Cividis  ## kategorik veriler için renk paleti
-    color_continuous_scale = px.colors.sequential.RdBu  ## sayısal veriler için renk paleti
 
     # Kredi tipleri dağılımı - ana bar chart
     fig = px.bar(
@@ -528,13 +524,11 @@ if preprocessed_data is not None:
         y='Sayı',
         title='Kredi Tipleri Dağılımı',
         color='Kredi Tipi',
-        color_discrete_sequence=px.colors.cyclical.Edge,
+        color_discrete_sequence=px.colors.sequential.Cividis,
         text_auto=True
     )
     fig.update_layout(template="plotly_dark", xaxis_tickangle=-45)
     st.plotly_chart(fig, use_container_width=True)
-
-
 
     col1, col2 = st.columns(2)
     with col1:
@@ -634,13 +628,22 @@ if preprocessed_data is not None:
         title='Kredi Skoru ve Kredi Karması Dağılımı',
         color='Credit_Score',
         color_discrete_sequence=color_palette,
-        hole=0.4
+        hole=0.03
     )
-    fig.update_traces(texttemplate='%{label}<br>%{percent}', textposition='inside')
-    fig.update_layout(template="plotly_dark")
+    fig.update_traces(
+        texttemplate='%{label}<br>%{percent}',
+        textposition='inside',
+        textfont=dict(size=14, family="Arial", color="white", weight="bold")  # Yazılar daha büyük ve kalın
+    )
+    # Genel görünüm ayarları
+    fig.update_layout(
+        template="plotly_dark",
+        width=1900,  # genislik
+        height=1200,  # yükseklik
+        font=dict(size=14, family="Arial", color="white")  # Genel yazı fontu
+    )
     st.plotly_chart(fig, use_container_width=True)
 
-    # Korelasyon Matrisi
     # Korelasyon Matrisi
     st.subheader("Faktörler Arası Korelasyon Analizi")
 
@@ -662,22 +665,24 @@ if preprocessed_data is not None:
     # Korelasyon matrisinin hesaplanması ve yuvarlanması
     corr_matrix = filtered_data[selected_cols].corr().round(2)
 
-    
-
     # Plotly ile korelasyon matrisi görselleştirmesi
     fig = px.imshow(
         corr_matrix,
         text_auto=True,
-        color_continuous_scale="Temps",
+        color_continuous_scale="GnBu",
         title='Değişkenler Arası Korelasyon Matrisi',
         labels=dict(color="Korelasyon")
     )
 
     # Grafik boyut ayarları
-    fig.update_layout(height=1000, width=1200, template="plotly_dark")
+    fig.update_layout(
+        height=60 * len(selected_cols),  # Her değişken için 60 yükseklik
+        width=120 * len(selected_cols),  # Her değişken için 120px genişlik
+        template="plotly_dark"
+    )
 
     # Grafiğin Streamlit üzerinde gösterilmesi
-    st.plotly_chart(fig, use_container_width=False)
+    st.plotly_chart(fig, use_container_width=True)
 
     # En Güçlü Korelasyonların Tablosu
     st.subheader("En Güçlü Korelasyonlar")
@@ -697,87 +702,134 @@ if preprocessed_data is not None:
         strong_corr_df.columns = ['Değişken 1', 'Değişken 2', 'Korelasyon']
 
         # Korelasyon tablosunun Streamlit üzerinde gösterimi
+        styled_df = strong_corr_df.style \
+            .background_gradient(cmap='Blues', subset=['Korelasyon']) \
+            .set_properties(**{
+            'text-align': 'center',
+            'font-weight': 'bold',
+            'border': '1px solid #ccc',
+            'padding': '5px'
+        }) \
+            .format({'Korelasyon': '{:.2f}'}) \
+            .set_table_styles([
+            {'selector': 'th', 'props': [('font-size', '16px'), ('background-color', '#84bc98'), ('color', 'white'),
+                                         ('text-align', 'center')]}
+        ])
+
+        # Streamlit tablosu
         st.dataframe(
-            strong_corr_df.style.background_gradient(cmap='Pastel1', subset=['Korelasyon']),
+            styled_df,
             use_container_width=True,
-            height=400
-        )
+            height=560)
     else:
         st.info("Belirtilen eşik değerine göre güçlü bir korelasyon bulunmamaktadır.")
 
     # SONUÇ BÖLÜMÜ
-    st.markdown('<div class="section-header"><h2>🏁 Kredi Skor Hikayenizin Sonucu</h2></div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header"><h2>🏁 Kredi Skor Analiz Sonucu</h2></div>', unsafe_allow_html=True)
     st.markdown("""
-    Kredi skorunun arkasındaki hikayeyi birlikte keşfettik. Bu dashboard sayesinde:
+    *Kredi skorunun arkasındaki hikayeyi birlikte keşfettik. Bu dashboard sayesinde:*
 
-    1. *Müşteri Profillerini* daha iyi anlayarak hedef kitlenizi tanıdınız
-    2. *Kredi Skoru Dinamiklerini* görerek hangi faktörlerin etkili olduğunu gördünüz
-    3. *Borç ve Ödeme Davranışlarının* kredi skoruna etkisini inceleyebildiniz
-    4. *Finansal Ürün Kullanımı* ile kredi skoru arasındaki ilişkileri keşfettiniz
-    5. *Faktörler Arası İlişkileri* analiz ederek daha derin içgörüler elde ettiniz
-
-    Bu verilerden yola çıkarak, müşterilerinize daha hedefli finansal ürünler sunabilir, kredi skorlarını iyileştirmeleri 
-    için rehberlik edebilir ve iş stratejilerinizi optimize edebilirsiniz.
+    1. **Müşteri Profillerini** daha iyi anlayarak hedef kitleyi tanıdık.
+    2. **Kredi Skoru Dinamiklerini** görerek hangi faktörlerin etkili olduğunu gördük.
+    3. **Borç ve Ödeme Davranışlarının** kredi skoruna etkisini inceleyebildik.
+    4. **Finansal Ürün Kullanımı** ile kredi skoru arasındaki ilişkileri keşfettik.
+    5. **Faktörler Arası İlişkileri** analiz ederek daha derin içgörüler elde ettik.
     """)
 
-    # Özet İstatistikler - Son bölüm
-    col1, col2, col3 = st.columns(3)
+    # Kredi skoru dağılımı - Pasta grafik
+    fig = px.pie(
+        filtered_data,
+        names='Credit_Score',
+        title='Kredi Skoru Dağılımı Özeti',
+        color='Credit_Score',
+        color_discrete_sequence=color_palette,
+        hole=0.2  # Donut efekti istersen
+    )
+    fig.update_traces(
+        textinfo='percent+label',
+        textfont_size=16,  # İç yazı fontu
+        pull=[0.05] * len(filtered_data['Credit_Score'].unique())  # Dilimleri hafifçe çek
+    )
+    fig.update_layout(
+        template="plotly_dark",
+        width=800,  # Grafik genişliği
+        height=600,  # Grafik yüksekliği
+        title_font_size=16,
+        legend=dict(
+            font=dict(size=16),  # Sağdaki yazılar (legend)
+            orientation="v",
+            yanchor="middle",
+            y=0.5,
+            xanchor="left",
+            x=1.02  # Sağ tarafa yasla
+        ),
+        margin=dict(t=50, b=50, l=50, r=50)
+    )
+    st.plotly_chart(fig, use_container_width=False)
 
-    with col1:
-        # Kredi skoru dağılımı - Pasta grafik
-        fig = px.pie(
-            filtered_data,
-            names='Credit_Score',
-            title='Kredi Skoru Dağılımı Özeti',
-            color='Credit_Score',
-            color_discrete_sequence=color_palette
-        )
-        fig.update_traces(textinfo='percent+label')
-        fig.update_layout(template="plotly_dark")
-        st.plotly_chart(fig, use_container_width=True)
+    # Ödeme davranışı özeti - Pasta grafik
+    payment_counts = filtered_data['Payment_Behaviour'].value_counts().reset_index()
+    payment_counts.columns = ['Ödeme Davranışı', 'Sayı']
 
-    with col2:
-        # Ödeme davranışı özeti
-        payment_counts = filtered_data['Payment_Behaviour'].value_counts().reset_index()
-        payment_counts.columns = ['Ödeme Davranışı', 'Sayı']
+    fig = px.pie(
+        payment_counts,
+        names='Ödeme Davranışı',
+        values='Sayı',
+        title='Ödeme Davranışı Özeti',
+        color_discrete_sequence=color_palette,
+        hole=0.1
+    )
 
-        fig = px.pie(
-            payment_counts,
-            names='Ödeme Davranışı',
-            values='Sayı',
-            title='Ödeme Davranışı Özeti',
-            color_discrete_sequence=px.colors.sequential.Plasma_r
-        )
-        fig.update_traces(textinfo='percent+label')
-        fig.update_layout(template="plotly_dark")
-        st.plotly_chart(fig, use_container_width=True)
+    fig.update_traces(
+        textinfo='percent+label',
+        textfont_size=18,  # Dilim üzerindeki yazılar
+        pull=[0.03] * len(payment_counts)  # Dilimleri biraz daha dışarı çek
+    )
 
-    with col3:
-        # Borç-gelir oranı gruplandırması
-        filtered_data['Borç-Gelir Grubu'] = pd.cut(
-            filtered_data['Debt_to_Income_Ratio'],
-            bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 1, 1.5, 2, 10],
-            labels=['0-0.1', '0.1-0.2', '0.2-0.3', '0.3-0.4', '0.4-0.5', '0.5-1.0', '1.0-1.5', '1.5-2.0', '2.0+']
-        )
+    fig.update_layout(
+        template="plotly_dark",
+        width=1800,  # Daha büyük grafik
+        height=1000,  # Daha uzun grafik
+        legend=dict(
+            font=dict(size=18),
+            orientation="v",
+            yanchor="middle",
+            y=0.5,
+            xanchor="left",
+            x=2.50  # Legend'ı grafikten daha uzağa koy
+        ),
+        margin=dict(t=80, b=60, l=60, r=100)  # Sağ boşluk artırıldı
+    )
 
-        debt_income_counts = filtered_data['Borç-Gelir Grubu'].value_counts().reset_index()
-        debt_income_counts.columns = ['Borç-Gelir Grubu', 'Sayı']
+    st.plotly_chart(fig, use_container_width=False)
 
-        fig = px.bar(
-            debt_income_counts,
-            x='Borç-Gelir Grubu',
-            y='Sayı',
-            title='Borç-Gelir Oranı Dağılımı Özeti',
-            color='Borç-Gelir Grubu',
-            color_discrete_sequence=px.colors.sequential.Viridis,
-            text_auto=True
-        )
-        fig.update_layout(template="plotly_dark", xaxis_title="Borç-Gelir Grubu", yaxis_title="Müşteri Sayısı")
-        st.plotly_chart(fig, use_container_width=True)
+    # Borç-gelir oranı gruplandırması - Bar grafik
+
+    filtered_data['Borç-Gelir Grubu'] = pd.cut(
+        filtered_data['Debt_to_Income_Ratio'],
+        bins=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 1, 1.5, 2, 10],
+        labels=['0-0.1', '0.1-0.2', '0.2-0.3', '0.3-0.4', '0.4-0.5', '0.5-1.0', '1.0-1.5', '1.5-2.0', '2.0+']
+    )
+
+    debt_income_counts = filtered_data['Borç-Gelir Grubu'].value_counts().reset_index()
+    debt_income_counts.columns = ['Borç-Gelir Grubu', 'Sayı']
+
+    fig = px.bar(
+        debt_income_counts,
+        x='Borç-Gelir Grubu',
+        y='Sayı',
+        title='Borç-Gelir Oranı Dağılımı Özeti',
+        color='Borç-Gelir Grubu',
+        color_discrete_sequence=color_palette,
+        text_auto=True
+    )
+    fig.update_layout(template="plotly_dark", width=1900, height=600, xaxis_title="Borç-Gelir Grubu",
+                      yaxis_title="Müşteri Sayısı")
+    st.plotly_chart(fig, use_container_width=True)
 
     # Dashboard sonucu
     st.success("""
-    📌 *Temel Bulgular*
+    📌 **Temel Bulgular**
 
     * Yüksek kredi skoruna sahip müşteriler genellikle daha düşük borç-gelir oranına sahiptir.
     * Ödeme davranışları, kredi skoru üzerinde güçlü bir etkiye sahiptir.
