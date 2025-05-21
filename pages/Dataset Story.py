@@ -108,7 +108,7 @@ st.markdown(css, unsafe_allow_html=True)
 
 # Veri dosyasını yükle
 try:
-    preprocessed_data = pd.read_csv("CreditScore.csv")
+    preprocessed_data = pd.read_csv("data/not_scaled_processed_data.csv")
 except Exception as e:
     st.error(f"Veri yüklenirken hata oluştu: {e}")
     preprocessed_data = None
